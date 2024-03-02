@@ -6,8 +6,6 @@ from PIL import ImageTk,Image
 root = Tk()
 root.title("WeatherPy")
 root.iconbitmap("icons/weatherimage.ico")
-root.configure(bg = "white")
-root.option_add('*background', 'white')
 
 # Defining Weather Icon Images
 sunny = Image.open("icons/sun.png")
@@ -36,12 +34,21 @@ rain_night_final = ImageTk.PhotoImage(resized_images[5])
 api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/karachi?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
 api = json.loads(api_req.content) 
 
+time_init = time.time()
+if time_init > api['days'][0]['sunriseEpoch'] and time_init < api['days'][0]['sunsetEpoch']:
+    root.configure(bg = "white")
+    root.option_add('*background', 'white')
+    root.option_add('*foreground', 'black')
+else:
+    root.configure(bg = "#2b2b2b")
+    root.option_add('*background', '#2b2b2b')
+    root.option_add('*foreground', 'white')
+    
 # Frame for Weather Icon and Temperature
 frame1 = LabelFrame(root,borderwidth=0)
 frame1.grid(row = 0,column=0,padx=(2,10))
 
 # Weather Icon based on Conditions
-time_init = time.time()
 condition = api['days'][0]['conditions']
 if time_init > api['days'][0]['sunriseEpoch'] and time_init < api['days'][0]['sunsetEpoch']:
     if 'CLEAR' in condition.upper():
@@ -80,8 +87,11 @@ desc = api['days'][0]['conditions']
 desc_label = Label(frame1,text = desc,font=("bebas kei",14,"bold"))
 desc_label.grid(row=2,column=0,sticky=W,padx=10)
 
+def display():
+    pass
+
 # More Details
-more = Button(frame1,text="More Details >",font=("bebas kei",12,"bold"),borderwidth=0)
+more = Button(frame1,text="More Details >",font=("bebas kei",12,"bold"),borderwidth=0,command = display)
 more.grid(row=3,column=0,sticky=W,padx=10)
 
 # Frame for Important Details
