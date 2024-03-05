@@ -4,6 +4,8 @@ from PIL import ImageTk,Image
 from tkinter import messagebox
 
 first = 1
+stop_event_time = None
+time_thread = None
 
 # Main Tkinter Window
 root = Tk()
@@ -36,9 +38,18 @@ rain_night_final = ImageTk.PhotoImage(resized_images[5])
 # Accessing the API
 api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/karachi?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
 api = json.loads(api_req.content) 
-    
+
+def start_time_thread(timeoff):
+    global stop_event_time,time_thread
+    stop_event_time = threading.Event()
+    time_thread = threading.Thread(target=time_update, args=(timeoff,))
+    time_thread.daemon = True
+    time_thread.start()
+
 def get_location():
-    global api_req,api,search,root
+    global api_req,api,search,root,time_thread, stop_event_time
+    stop_event_time.set()
+    time_thread.join()
     pass_var = False
     if search.get() == "":
         pass
@@ -56,36 +67,39 @@ def get_location():
         if pass_var == True:
             refresh_info()
 def time_update(time_offset):
-        global frame2
-        # Loop for Updating Time
-        while True:
+    global frame2,stop_event_time
+    # Loop for Updating Time
+    while not stop_event_time.is_set():
             
-            # Getting Current Time in Epoch Format
-            time_epoch = time.time()
+        # Getting Current Time in Epoch Format
+        time_epoch = time.time()
             
-            # Converting to Readable Format
-            real_time = datetime.datetime.utcfromtimestamp(time_epoch)
+        # Converting to Readable Format
+        real_time = datetime.datetime.utcfromtimestamp(time_epoch)
             
-            # Checking the Time Zone Offset is in Decimal or not and setting the time according to that
-            if time_offset == int(time_offset):
-                time_to_add = datetime.timedelta(hours=time_offset, minutes=0, seconds=0)
-            else:
-                decimal_part = time_offset % 1
-                time_to_add = datetime.timedelta(hours=int(time_offset), minutes=decimal_part*60, seconds=0)
+        # Checking the Time Zone Offset is in Decimal or not and setting the time according to that
+        if time_offset == int(time_offset):
+            time_to_add = datetime.timedelta(hours=time_offset, minutes=0, seconds=0)
+        else:
+            decimal_part = time_offset % 1
+            time_to_add = datetime.timedelta(hours=int(time_offset), minutes=decimal_part*60, seconds=0)
             
-            # Adding the Offset and GMT Time to get Final Time
-            new_time = real_time + time_to_add
+        # Adding the Offset and GMT Time to get Final Time
+        new_time = real_time + time_to_add
             
-            # Adding the Offset and GMT Time to get Final Time
-            new_time = new_time.strftime('%H:%M:%S')
+        # Adding the Offset and GMT Time to get Final Time
+        new_time = new_time.strftime('%H:%M:%S')
             
-            try:
-                time_label2 = Label(frame2,text = str(new_time),font = ("bebas neue",12,"bold"))
-                time_label2.grid(row=0,column=1,sticky=E)
-            except:
-                pass
+        try:
+            time_label2 = Label(frame2,text = str(new_time),font = ("bebas neue",12,"bold"))
+            time_label2.grid(row=0,column=1,sticky=E)
+        except:
+            pass
             
-            time.sleep(1)
+        time.sleep(1)
+
+def display_more():
+    pass
 
 def refresh_info():
     global search,first,root,frame2
@@ -129,7 +143,7 @@ def refresh_info():
     entry_frame = LabelFrame(root,borderwidth=0)
     entry_frame.grid(row=3,column=0,columnspan=2,pady=10)
 
-    search = Entry(entry_frame)
+    search = Entry(entry_frame,bg="white",fg="black")
     search.pack()
 
     search_button = Button(entry_frame,text="Search Location",font = ("bebas kei",12,"bold"),command=get_location)
@@ -176,11 +190,8 @@ def refresh_info():
     desc_label = Label(frame1,text = desc,font=("bebas kei",14,"bold"))
     desc_label.grid(row=2,column=0,sticky=W,padx=10)
 
-    def display():
-        pass
-
     # More Details
-    more = Button(frame1,text="More Details >",font=("bebas kei",12,"bold"),borderwidth=0,command = display)
+    more = Button(frame1,text="More Details >",font=("bebas kei",12,"bold"),borderwidth=0,command = display_more)
     more.grid(row=3,column=0,sticky=W,padx=10)
 
     # Frame 2 Work
@@ -192,14 +203,12 @@ def refresh_info():
     time_off = api['tzoffset']
 
     # Creating Different Thread for Time
-    time_thread = threading.Thread(target=time_update, args=(time_off,))
-    time_thread.daemon = True
-    time_thread.start()
+    start_time_thread(time_off)
+    
     
     for i in range(1,6,2):
         locals()['trash_label'+str(i)] = Label(frame2,text = "_______________________________________________",fg="gray", font=("Arial", 8))
         locals()['trash_label'+str(i)].grid(row=i,column=0,columnspan=2)
-
     
     # Today's Date
     time_day = api['days'][0]['datetime']
