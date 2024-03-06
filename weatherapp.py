@@ -39,17 +39,8 @@ rain_night_final = ImageTk.PhotoImage(resized_images[5])
 api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/karachi?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
 api = json.loads(api_req.content) 
 
-def start_time_thread(timeoff):
-    global stop_event_time,time_thread
-    stop_event_time = threading.Event()
-    time_thread = threading.Thread(target=time_update, args=(timeoff,))
-    time_thread.daemon = True
-    time_thread.start()
-
 def get_location():
     global api_req,api,search,root,time_thread, stop_event_time
-    stop_event_time.set()
-    time_thread.join()
     pass_var = False
     if search.get() == "":
         pass
@@ -61,13 +52,14 @@ def get_location():
         try:
             api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"+temp+"?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
             api = json.loads(api_req.content)
+            stop_event_time.is_set()
             pass_var = True
         except:
             messagebox.showerror("Error","Invalid Input or Place")
         if pass_var == True:
             refresh_info()
 def time_update(time_offset):
-    global frame2,stop_event_time
+    global frame2,stop_event_time,root
     # Loop for Updating Time
     while not stop_event_time.is_set():
             
@@ -97,12 +89,19 @@ def time_update(time_offset):
             pass
             
         time.sleep(1)
+        
+def start_time_thread(timeoff):
+    global stop_event_time,time_thread
+    stop_event_time = threading.Event()
+    time_thread = threading.Thread(target=time_update, args=(timeoff,))
+    time_thread.daemon = True
+    time_thread.start()
 
 def display_more():
     pass
 
 def refresh_info():
-    global search,first,root,frame2
+    global search,first,root,frame2,root
     # Main Tkinter Window
     if first == 1:
         first = 0
@@ -227,12 +226,16 @@ def refresh_info():
     location_label2.grid(row=4,column=1,sticky=E)
 
     # Air Quality
-    air_quality = api['stations']['OPKC']['quality']
+    try:
+        air_quality = api['stations']['OPKC']['quality']
+    except KeyError:
+        air_quality = "Error"
     air_quality_label1 = Label(frame2,text = "Air Quality: ",font = ("bebas neue",13))
     air_quality_label2 = Label(frame2,text = air_quality,font =("bebas neue",12,"bold"))
 
     air_quality_label1.grid(row=6,column=0,sticky=W)
     air_quality_label2.grid(row=6,column=1,sticky=E)
+    
+    root.mainloop()
 
 refresh_info()
-root.mainloop()
