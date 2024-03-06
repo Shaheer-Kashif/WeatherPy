@@ -4,8 +4,6 @@ from PIL import ImageTk,Image
 from tkinter import messagebox
 
 first = 1
-stop_event_time = None
-time_thread = None
 
 # Main Tkinter Window
 root = Tk()
@@ -40,7 +38,7 @@ api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServ
 api = json.loads(api_req.content) 
 
 def get_location():
-    global api_req,api,search,root,time_thread, stop_event_time
+    global api_req,api,search,root
     pass_var = False
     if search.get() == "":
         pass
@@ -52,56 +50,43 @@ def get_location():
         try:
             api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"+temp+"?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
             api = json.loads(api_req.content)
-            stop_event_time.is_set()
             pass_var = True
         except:
             messagebox.showerror("Error","Invalid Input or Place")
         if pass_var == True:
             refresh_info()
-def time_update(time_offset):
-    global frame2,stop_event_time,root
+            
+def time_update():
+    global frame2,root,time_label2,time_off
     # Loop for Updating Time
-    while not stop_event_time.is_set():
             
-        # Getting Current Time in Epoch Format
-        time_epoch = time.time()
+    # Getting Current Time in Epoch Format
+    time_epoch = time.time()
             
-        # Converting to Readable Format
-        real_time = datetime.datetime.utcfromtimestamp(time_epoch)
+    # Converting to Readable Format
+    real_time = datetime.datetime.utcfromtimestamp(time_epoch)
             
-        # Checking the Time Zone Offset is in Decimal or not and setting the time according to that
-        if time_offset == int(time_offset):
-            time_to_add = datetime.timedelta(hours=time_offset, minutes=0, seconds=0)
-        else:
-            decimal_part = time_offset % 1
-            time_to_add = datetime.timedelta(hours=int(time_offset), minutes=decimal_part*60, seconds=0)
+    # Checking the Time Zone Offset is in Decimal or not and setting the time according to that
+    if time_off == int(time_off):
+        time_to_add = datetime.timedelta(hours=time_off, minutes=0, seconds=0)
+    else:
+        decimal_part = time_off % 1
+        time_to_add = datetime.timedelta(hours=int(time_off), minutes=decimal_part*60, seconds=0)
             
-        # Adding the Offset and GMT Time to get Final Time
-        new_time = real_time + time_to_add
+    # Adding the Offset and GMT Time to get Final Time
+    new_time = real_time + time_to_add
             
-        # Adding the Offset and GMT Time to get Final Time
-        new_time = new_time.strftime('%H:%M:%S')
+    # Adding the Offset and GMT Time to get Final Time
+    new_time = new_time.strftime('%H:%M:%S')
+    time_label2.config(text = str(new_time))
             
-        try:
-            time_label2 = Label(frame2,text = str(new_time),font = ("bebas neue",12,"bold"))
-            time_label2.grid(row=0,column=1,sticky=E)
-        except:
-            pass
-            
-        time.sleep(1)
+    time_label2.after(1000, time_update)
         
-def start_time_thread(timeoff):
-    global stop_event_time,time_thread
-    stop_event_time = threading.Event()
-    time_thread = threading.Thread(target=time_update, args=(timeoff,))
-    time_thread.daemon = True
-    time_thread.start()
-
 def display_more():
     pass
 
 def refresh_info():
-    global search,first,root,frame2,root
+    global search,first,root,frame2,root,time_label2,time_off
     # Main Tkinter Window
     if first == 1:
         first = 0
@@ -142,11 +127,11 @@ def refresh_info():
     entry_frame = LabelFrame(root,borderwidth=0)
     entry_frame.grid(row=3,column=0,columnspan=2,pady=10)
 
-    search = Entry(entry_frame,bg="white",fg="black")
+    search = Entry(entry_frame,bg="white",fg="black",font=("Helvetica",14))
     search.pack()
 
-    search_button = Button(entry_frame,text="Search Location",font = ("bebas kei",12,"bold"),command=get_location)
-    search_button.pack()
+    search_button = Button(entry_frame,text="Search Location",font = ("bebas kei",14,"bold"),command=get_location,bg="#0086D3",fg="white",width = 18)
+    search_button.pack(pady=(5,0))
 
     # Frame 1 Work
     
@@ -202,15 +187,16 @@ def refresh_info():
     time_off = api['tzoffset']
 
     # Creating Different Thread for Time
-    start_time_thread(time_off)
+    time_label2 = Label(frame2,text = "00:00:00",font = ("bebas neue",12,"bold"))
+    time_label2.grid(row=0,column=1,sticky=E)
     
-    
-    for i in range(1,6,2):
-        locals()['trash_label'+str(i)] = Label(frame2,text = "_______________________________________________",fg="gray", font=("Arial", 8))
-        locals()['trash_label'+str(i)].grid(row=i,column=0,columnspan=2)
+    time_update()
     
     # Today's Date
-    time_day = api['days'][0]['datetime']
+    try:
+        time_day = api['days'][0]['datetime']
+    except KeyError:
+        time_day = "Error"
     time_day_label = Label(frame2,text = "Date: ",font = ("bebas neue",13))
     time_day_label2 = Label(frame2,text = time_day,font = ("bebas neue",12,"bold"))
 
@@ -218,7 +204,10 @@ def refresh_info():
     time_day_label2.grid(row=2,column=1,sticky=E)
 
     # Getting Location from the Data
-    location = api['resolvedAddress']
+    try:
+        location = api['resolvedAddress']
+    except KeyError:
+        location = "Error"
     location_label = Label(frame2,text = "Location: ",font = ("bebas neue",13))
     location_label2 = Label(frame2,text = location,font=("bebas neue",12,"bold"))
 
@@ -227,15 +216,20 @@ def refresh_info():
 
     # Air Quality
     try:
-        air_quality = api['stations']['OPKC']['quality']
+        wind_speed = api['days'][0]['windspeed']
     except KeyError:
-        air_quality = "Error"
-    air_quality_label1 = Label(frame2,text = "Air Quality: ",font = ("bebas neue",13))
-    air_quality_label2 = Label(frame2,text = air_quality,font =("bebas neue",12,"bold"))
+        wind_speed = "Error"
+    wind_speed_label1 = Label(frame2,text = "Wind Speed: ",font = ("bebas neue",13))
+    wind_speed_label2 = Label(frame2,text = str(wind_speed)+" km/hr",font =("bebas neue",12,"bold"))
 
-    air_quality_label1.grid(row=6,column=0,sticky=W)
-    air_quality_label2.grid(row=6,column=1,sticky=E)
+    wind_speed_label1.grid(row=6,column=0,sticky=W)
+    wind_speed_label2.grid(row=6,column=1,sticky=E)
     
+    for i in range(1,6,2):
+        line = "_" *len(location)
+        locals()['trash_label'+str(i)] = Label(frame2,text = line + "________________________________",fg="gray", font=("Arial", 8))
+        locals()['trash_label'+str(i)].grid(row=i,column=0,columnspan=2,sticky=W+E)
+        
     root.mainloop()
 
 refresh_info()
