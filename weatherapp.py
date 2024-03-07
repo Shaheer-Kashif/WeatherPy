@@ -1,7 +1,8 @@
-import requests, json, datetime, time, threading
+import requests, json, datetime, time
 from tkinter import *
 from PIL import ImageTk,Image
 from tkinter import messagebox
+from urllib.request import urlopen
 
 first = 1
 
@@ -33,10 +34,20 @@ night_final = ImageTk.PhotoImage(resized_images[3])
 cloudy_night_final = ImageTk.PhotoImage(resized_images[4])
 rain_night_final = ImageTk.PhotoImage(resized_images[5])
 
+# Getting Location
+url='http://ipinfo.io/json'
+response=urlopen(url)
+
+# Extracting it in a Readable Format
+current_location = json.load(response)
+city = current_location['city']
+country = current_location['country']
+
 # Accessing the API
-api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/karachi?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
+api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"+city+"%20"+country+"?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
 api = json.loads(api_req.content) 
 
+# Getting the Location based on Entry
 def get_location():
     global api_req,api,search,root
     pass_var = False
@@ -79,7 +90,7 @@ def time_update():
     # Adding the Offset and GMT Time to get Final Time
     new_time = new_time.strftime('%H:%M:%S')
     time_label2.config(text = str(new_time))
-            
+
     time_label2.after(1000, time_update)
         
 def display_more():
