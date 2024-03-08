@@ -66,7 +66,8 @@ def get_location():
             messagebox.showerror("Error","Invalid Input or Place")
         if pass_var == True:
             refresh_info()
-            
+
+# Time Update Func after Every Second
 def time_update():
     global frame2,root,time_label2,time_off
     # Loop for Updating Time
@@ -91,14 +92,129 @@ def time_update():
     new_time = new_time.strftime('%H:%M:%S')
     time_label2.config(text = str(new_time))
 
+    # 1 second delay to update time again
     time_label2.after(1000, time_update)
         
 def display_more():
-    pass
+    # Disabling buttons to avoid conflict of windows and location
+    global more,search_button
+    more.config(state=DISABLED)
+    search_button.config(state=DISABLED)
+    
+    # Creating new window
+    new_window = Toplevel()
+    
+    # Weather Description
+    # Create Frame
+    desc_frame = LabelFrame(new_window,borderwidth=0)
+    desc_frame.grid(row = 0,column=0,columnspan=2)
+    
+    # Getting Description from API
+    description = api['days'][0]['description']
+    
+    # Creating Description Labels
+    desc_label = Label(desc_frame,text = "Description: ",font = ("bebas neue",13))
+    desc_label2 = Label(desc_frame,text = description,font = ("bebas neue",12,"bold"))
+    
+    # Placing Description Labels
+    desc_label.grid(row=0,column=0,sticky=W)
+    desc_label2.grid(row=0,column=1,sticky=E)
+    
+    frame1_n = LabelFrame(new_window,borderwidth=0)
+    frame1_n.grid(row=1,column=0,padx=(2,10))
+    
+    frame2_n = LabelFrame(new_window,borderwidth=0)
+    frame2_n.grid(row=1,column=1,padx=(2,10))
+    
+    uv_index = api['days'][0]['uvindex']
+    str_uv = str(int(uv_index))
+    if uv_index >= 0 and uv_index <= 2:
+        uv_index = str_uv + " (Low)"
+    elif uv_index >= 3 and uv_index <= 5:
+        uv_index = str_uv + " (Moderate)"
+    elif uv_index >= 6 and uv_index <= 7:
+        uv_index = str_uv + " (High)"
+    elif uv_index >= 8 and uv_index <= 10:
+        uv_index = str_uv + " (Very High)"
+        
+    uv_index_label = Label(frame1_n,text = "UV Index: ",font = ("bebas neue",13))
+    uv_index_label2 = Label(frame1_n,text = uv_index,font = ("bebas neue",12,"bold"))
+    uv_index_label.grid(row=0,column=0,sticky=W)
+    uv_index_label2.grid(row=0,column=1,sticky=E)
+    
+    visibility = api['days'][0]['visibility']
+    visibility_label = Label(frame1_n,text = "Visibility: ",font = ("bebas neue",13))
+    visibility_label2 = Label(frame1_n,text = str(visibility) + " km",font = ("bebas neue",12,"bold"))
+    visibility_label.grid(row=1,column=0,sticky=W)
+    visibility_label2.grid(row=1,column=1,sticky=E)
+    
+    
+    humidity = api['days'][0]['humidity']
+    str_hum = str(int(humidity))
+    if humidity < 30:
+        humidity = str_hum +"% (Dry)"
+    elif humidity >= 30 and humidity <= 60:
+        humidity = str_hum +"% (Moderate)"
+    elif humidity >= 60 and humidity <= 80:
+        humidity = str_hum +"% (High)"
+    elif humidity > 80:
+        humidity = str_hum +"% (Very High)"
+        
+    humidity_label = Label(frame1_n,text = "Humidity: ",font = ("bebas neue",13))
+    humidity_label2 = Label(frame1_n,text = humidity,font = ("bebas neue",12,"bold"))
+    
+    humidity_label.grid(row=2,column=0,sticky=W)
+    humidity_label2.grid(row=2,column=1,sticky=E)
 
+    precip = int(api['days'][0]['precipprob'])
+    precip_label = Label(frame1_n,text = "Precipitation Probability: ",font = ("bebas neue",13))
+    precip_label2 = Label(frame1_n,text = str(precip)+"%",font = ("bebas neue",12,"bold"))
+    precip_label.grid(row=3,column=0,sticky=W)
+    precip_label2.grid(row=3,column=1,sticky=E)
+    
+    
+
+    
+    sunrise = api['days'][0]['sunrise']
+    
+    sunrise_label = Label(frame2_n,text = "Sunrise: ",font = ("bebas neue",13))
+    sunrise_label2 = Label(frame2_n,text = sunrise ,font = ("bebas neue",12,"bold"))
+    
+    sunrise_label.grid(row=0,column=0,sticky=W)
+    sunrise_label2.grid(row=0,column=1,sticky=E)
+    
+    sunset = api['days'][0]['sunset']
+    
+    sunset_label = Label(frame2_n,text = "Sunset: ",font = ("bebas neue",13))
+    sunset_label2 = Label(frame2_n,text = sunset ,font = ("bebas neue",12,"bold"))
+    
+    sunset_label.grid(row=1,column=0,sticky=W)
+    sunset_label2.grid(row=1,column=1,sticky=E)
+    
+    min_temp_f = api['days'][0]['tempmin']
+    min_temp_c = round(5/9 *(min_temp_f-32))
+    
+    min_temp_label = Label(frame2_n,text = "Min Temperature: ",font = ("bebas neue",13))
+    min_temp_label2 = Label(frame2_n,text = str(min_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
+    
+    min_temp_label.grid(row=2,column=0,sticky=W)
+    min_temp_label2.grid(row=2,column=1,sticky=E)
+    
+    max_temp_f = api['days'][0]['tempmax']
+    max_temp_c = round(5/9 *(max_temp_f-32))
+    
+    max_temp_label = Label(frame2_n,text = "Max Temperature: ",font = ("bebas neue",13))
+    max_temp_label2 = Label(frame2_n,text = str(max_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
+    
+    max_temp_label.grid(row=3,column=0,sticky=W)
+    max_temp_label2.grid(row=3,column=1,sticky=E)
+    
+    
 def refresh_info():
-    global search,first,root,frame2,root,time_label2,time_off
-    # Main Tkinter Window
+    global search,first,root,frame2,root,time_label2,time_off,more,search_button
+    
+    # Main Tkinter Window, If Program is executed 1st then it reads the images from the outside
+    # otherwise from the inside because of a bug
     if first == 1:
         first = 0
         global sunny_final,cloudy_day_final,rain_day_final,night_final,cloudy_night_final,rain_night_final
