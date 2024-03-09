@@ -5,6 +5,26 @@ from tkinter import messagebox
 from urllib.request import urlopen
 
 first = 1
+new_window = None
+display_pass = True
+
+# Getting Location
+url='http://ipinfo.io/json'
+try:
+    response=urlopen(url)
+    current_location = json.load(response)
+    
+    # Extracting it in a Readable Format
+    city = current_location['city']
+    country = current_location['country']
+    
+except:
+    messagebox.showerror("Error","Could not Get Location due to No Internet Connection")
+    quit()
+    
+# Accessing the API
+api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"+city+"%20"+country+"?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
+api = json.loads(api_req.content) 
 
 # Main Tkinter Window
 root = Tk()
@@ -34,19 +54,6 @@ night_final = ImageTk.PhotoImage(resized_images[3])
 cloudy_night_final = ImageTk.PhotoImage(resized_images[4])
 rain_night_final = ImageTk.PhotoImage(resized_images[5])
 
-# Getting Location
-url='http://ipinfo.io/json'
-response=urlopen(url)
-
-# Extracting it in a Readable Format
-current_location = json.load(response)
-city = current_location['city']
-country = current_location['country']
-
-# Accessing the API
-api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"+city+"%20"+country+"?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
-api = json.loads(api_req.content) 
-
 # Getting the Location based on Entry
 def get_location():
     global api_req,api,search,root
@@ -62,12 +69,14 @@ def get_location():
             api_req = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"+temp+"?unitGroup=us&include=days&key=MBRFCLLUGNCW5BFQ2GVSJ99HG&contentType=json")
             api = json.loads(api_req.content)
             pass_var = True
+        except requests.exceptions.ConnectionError:
+            messagebox.showerror("Error","No Internet Access Found")
         except:
             messagebox.showerror("Error","Invalid Input or Place")
         if pass_var == True:
             refresh_info()
 
-# Time Update Func after Every Second
+# Time Update Function after Every Second
 def time_update():
     global frame2,root,time_label2,time_off
     # Loop for Updating Time
@@ -94,124 +103,165 @@ def time_update():
 
     # 1 second delay to update time again
     time_label2.after(1000, time_update)
-        
+
+# Search Button Disable based on New Window
+def search_button_disable():
+    global search_button,new_window
+    try:
+        if new_window.winfo_exists():
+            search_button.config(state=DISABLED)
+        else:
+            search_button.config(state=ACTIVE)
+    except:
+        pass
+    search_button.after(500,search_button_disable)
+    
+# More Details Window Function
 def display_more():
     # Disabling buttons to avoid conflict of windows and location
-    global more,search_button
-    more.config(state=DISABLED)
-    search_button.config(state=DISABLED)
+    global new_window,display_pass
     
-    # Creating new window
-    new_window = Toplevel()
+    # Calling Search Button Disable Function
+    search_button_disable()
     
-    # Weather Description
-    # Create Frame
-    desc_frame = LabelFrame(new_window,borderwidth=0)
-    desc_frame.grid(row = 0,column=0,columnspan=2)
-    
-    # Getting Description from API
-    description = api['days'][0]['description']
-    
-    # Creating Description Labels
-    desc_label = Label(desc_frame,text = "Description: ",font = ("bebas neue",13))
-    desc_label2 = Label(desc_frame,text = description,font = ("bebas neue",12,"bold"))
-    
-    # Placing Description Labels
-    desc_label.grid(row=0,column=0,sticky=W)
-    desc_label2.grid(row=0,column=1,sticky=E)
-    
-    frame1_n = LabelFrame(new_window,borderwidth=0)
-    frame1_n.grid(row=1,column=0,padx=(2,10))
-    
-    frame2_n = LabelFrame(new_window,borderwidth=0)
-    frame2_n.grid(row=1,column=1,padx=(2,10))
-    
-    uv_index = api['days'][0]['uvindex']
-    str_uv = str(int(uv_index))
-    if uv_index >= 0 and uv_index <= 2:
-        uv_index = str_uv + " (Low)"
-    elif uv_index >= 3 and uv_index <= 5:
-        uv_index = str_uv + " (Moderate)"
-    elif uv_index >= 6 and uv_index <= 7:
-        uv_index = str_uv + " (High)"
-    elif uv_index >= 8 and uv_index <= 10:
-        uv_index = str_uv + " (Very High)"
+    # First Time Creating and Destroying a Window so the window property is associated with the variable
+    if display_pass == True:
+        new_window = Toplevel()
+        display_pass = False
+        new_window.destroy()
+       
+    # Chcking if the window exists
+    if new_window.winfo_exists():
+        pass
+    else:
+        # Creating new window
+        new_window = Toplevel()
         
-    uv_index_label = Label(frame1_n,text = "UV Index: ",font = ("bebas neue",13))
-    uv_index_label2 = Label(frame1_n,text = uv_index,font = ("bebas neue",12,"bold"))
-    uv_index_label.grid(row=0,column=0,sticky=W)
-    uv_index_label2.grid(row=0,column=1,sticky=E)
-    
-    visibility = api['days'][0]['visibility']
-    visibility_label = Label(frame1_n,text = "Visibility: ",font = ("bebas neue",13))
-    visibility_label2 = Label(frame1_n,text = str(visibility) + " km",font = ("bebas neue",12,"bold"))
-    visibility_label.grid(row=1,column=0,sticky=W)
-    visibility_label2.grid(row=1,column=1,sticky=E)
-    
-    
-    humidity = api['days'][0]['humidity']
-    str_hum = str(int(humidity))
-    if humidity < 30:
-        humidity = str_hum +"% (Dry)"
-    elif humidity >= 30 and humidity <= 60:
-        humidity = str_hum +"% (Moderate)"
-    elif humidity >= 60 and humidity <= 80:
-        humidity = str_hum +"% (High)"
-    elif humidity > 80:
-        humidity = str_hum +"% (Very High)"
+        # More Info
+        # Create Frame
+        desc_frame = LabelFrame(new_window,borderwidth=0)
+        desc_frame.grid(row = 0,column=0,columnspan=2)
         
-    humidity_label = Label(frame1_n,text = "Humidity: ",font = ("bebas neue",13))
-    humidity_label2 = Label(frame1_n,text = humidity,font = ("bebas neue",12,"bold"))
-    
-    humidity_label.grid(row=2,column=0,sticky=W)
-    humidity_label2.grid(row=2,column=1,sticky=E)
+        # Weather Description
+        description = api['days'][0]['description']
+        
+        desc_label = Label(desc_frame,text = "Description: ",font = ("bebas neue",15))
+        desc_label2 = Label(desc_frame,text = description,font = ("bebas neue",15,"bold"))
+        
+        desc_label.grid(row=0,column=0,sticky=W)
+        desc_label2.grid(row=0,column=1,sticky=E)
+        
+        # Creating 1st Details Frame
+        frame1_n = LabelFrame(new_window,borderwidth=1)
+        frame1_n.grid(row=1,column=0)
+        
+        # UV Value
+        uv_index = api['days'][0]['uvindex']
+        str_uv = str(int(uv_index))
+        
+        # Categorizing UV Value
+        if uv_index >= 0 and uv_index <= 2:
+            uv_index = str_uv + " (Low)"
+        elif uv_index >= 3 and uv_index <= 5:
+            uv_index = str_uv + " (Moderate)"
+        elif uv_index >= 6 and uv_index <= 7:
+            uv_index = str_uv + " (High)"
+        elif uv_index >= 8 and uv_index <= 10:
+            uv_index = str_uv + " (Very High)"
+        
+        uv_index_label = Label(frame1_n,text = "UV Index: ",font = ("bebas neue",13))
+        uv_index_label2 = Label(frame1_n,text = uv_index,font = ("bebas neue",12,"bold"))
+        
+        uv_index_label.grid(row=0,column=0,sticky=W)
+        uv_index_label2.grid(row=0,column=1,sticky=E)
+        
+        # Visiility in KMs
+        visibility = api['days'][0]['visibility']
+        
+        visibility_label = Label(frame1_n,text = "Visibility: ",font = ("bebas neue",13))
+        visibility_label2 = Label(frame1_n,text = str(visibility) + " km",font = ("bebas neue",12,"bold"))
+        
+        visibility_label.grid(row=1,column=0,sticky=W)
+        visibility_label2.grid(row=1,column=1,sticky=E)
+        
+        # Humidity Value
+        humidity = api['days'][0]['humidity']
+        str_hum = str(int(humidity))
+        
+        # Categorizing Humidity Value
+        if humidity < 30:
+            humidity = str_hum +"% (Dry)"
+        elif humidity >= 30 and humidity <= 60:
+            humidity = str_hum +"% (Moderate)"
+        elif humidity >= 60 and humidity <= 80:
+            humidity = str_hum +"% (High)"
+        elif humidity > 80:
+            humidity = str_hum +"% (Very High)"
+            
+        humidity_label = Label(frame1_n,text = "Humidity: ",font = ("bebas neue",13))
+        humidity_label2 = Label(frame1_n,text = humidity,font = ("bebas neue",12,"bold"))
+        
+        humidity_label.grid(row=2,column=0,sticky=W)
+        humidity_label2.grid(row=2,column=1,sticky=E)
 
-    precip = int(api['days'][0]['precipprob'])
-    precip_label = Label(frame1_n,text = "Precipitation Probability: ",font = ("bebas neue",13))
-    precip_label2 = Label(frame1_n,text = str(precip)+"%",font = ("bebas neue",12,"bold"))
-    precip_label.grid(row=3,column=0,sticky=W)
-    precip_label2.grid(row=3,column=1,sticky=E)
-    
-    
-
-    
-    sunrise = api['days'][0]['sunrise']
-    
-    sunrise_label = Label(frame2_n,text = "Sunrise: ",font = ("bebas neue",13))
-    sunrise_label2 = Label(frame2_n,text = sunrise ,font = ("bebas neue",12,"bold"))
-    
-    sunrise_label.grid(row=0,column=0,sticky=W)
-    sunrise_label2.grid(row=0,column=1,sticky=E)
-    
-    sunset = api['days'][0]['sunset']
-    
-    sunset_label = Label(frame2_n,text = "Sunset: ",font = ("bebas neue",13))
-    sunset_label2 = Label(frame2_n,text = sunset ,font = ("bebas neue",12,"bold"))
-    
-    sunset_label.grid(row=1,column=0,sticky=W)
-    sunset_label2.grid(row=1,column=1,sticky=E)
-    
-    min_temp_f = api['days'][0]['tempmin']
-    min_temp_c = round(5/9 *(min_temp_f-32))
-    
-    min_temp_label = Label(frame2_n,text = "Min Temperature: ",font = ("bebas neue",13))
-    min_temp_label2 = Label(frame2_n,text = str(min_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
-    
-    min_temp_label.grid(row=2,column=0,sticky=W)
-    min_temp_label2.grid(row=2,column=1,sticky=E)
-    
-    max_temp_f = api['days'][0]['tempmax']
-    max_temp_c = round(5/9 *(max_temp_f-32))
-    
-    max_temp_label = Label(frame2_n,text = "Max Temperature: ",font = ("bebas neue",13))
-    max_temp_label2 = Label(frame2_n,text = str(max_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
-    
-    max_temp_label.grid(row=3,column=0,sticky=W)
-    max_temp_label2.grid(row=3,column=1,sticky=E)
+        # Precipitation Probability
+        precip = int(api['days'][0]['precipprob'])
+        
+        precip_label = Label(frame1_n,text = "Rain/Snow Chances: ",font = ("bebas neue",13))
+        precip_label2 = Label(frame1_n,text = str(precip)+"%",font = ("bebas neue",12,"bold"))
+        
+        precip_label.grid(row=3,column=0,sticky=W)
+        precip_label2.grid(row=3,column=1,sticky=E)
+        
+        # Creating 2nd Details Frame
+        frame2_n = LabelFrame(new_window,borderwidth=1)
+        frame2_n.grid(row=1,column=1)
+        
+        # Sunrise Value
+        sunrise = api['days'][0]['sunrise']
+        
+        sunrise_label = Label(frame2_n,text = "Sunrise: ",font = ("bebas neue",13))
+        sunrise_label2 = Label(frame2_n,text = sunrise ,font = ("bebas neue",12,"bold"))
+        
+        sunrise_label.grid(row=0,column=0,sticky=W)
+        sunrise_label2.grid(row=0,column=1,sticky=E)
+        
+        # Sunset Value
+        sunset = api['days'][0]['sunset']
+        
+        sunset_label = Label(frame2_n,text = "Sunset: ",font = ("bebas neue",13))
+        sunset_label2 = Label(frame2_n,text = sunset ,font = ("bebas neue",12,"bold"))
+        
+        sunset_label.grid(row=1,column=0,sticky=W)
+        sunset_label2.grid(row=1,column=1,sticky=E)
+        
+        # Minimum Temperature Value
+        min_temp_f = api['days'][0]['tempmin']
+        min_temp_c = round(5/9 *(min_temp_f-32))
+        
+        min_temp_label = Label(frame2_n,text = "Min Temperature: ",font = ("bebas neue",13))
+        min_temp_label2 = Label(frame2_n,text = str(min_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
+        
+        min_temp_label.grid(row=2,column=0,sticky=W)
+        min_temp_label2.grid(row=2,column=1,sticky=E)
+        
+        # Maximum Temperature Value
+        max_temp_f = api['days'][0]['tempmax']
+        max_temp_c = round(5/9 *(max_temp_f-32))
+        
+        max_temp_label = Label(frame2_n,text = "Max Temperature: ",font = ("bebas neue",13))
+        max_temp_label2 = Label(frame2_n,text = str(max_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
+        
+        max_temp_label.grid(row=3,column=0,sticky=W)
+        max_temp_label2.grid(row=3,column=1,sticky=E)
+        
+        # Creating 3rd Details Frame (5 Days Extended Forecast)
+        frame3_n = LabelFrame(new_window,borderwidth=1)
+        frame3_n.grid(row=2,column=0,columnspan=2)
     
     
 def refresh_info():
-    global search,first,root,frame2,root,time_label2,time_off,more,search_button
+    global search,first,root,frame2,root,time_label2,time_off,more,search_button,display_pass
     
     # Main Tkinter Window, If Program is executed 1st then it reads the images from the outside
     # otherwise from the inside because of a bug
@@ -224,6 +274,8 @@ def refresh_info():
         root.title("WeatherPy")
         root.iconbitmap("icons/weatherimage.ico")
         
+        display_pass = True
+
         sunny_final = ImageTk.PhotoImage(resized_images[0])
         cloudy_day_final = ImageTk.PhotoImage(resized_images[1])
         rain_day_final = ImageTk.PhotoImage(resized_images[2])
@@ -320,10 +372,8 @@ def refresh_info():
     time_update()
     
     # Today's Date
-    try:
-        time_day = api['days'][0]['datetime']
-    except KeyError:
-        time_day = "Error"
+    time_day = api['days'][0]['datetime']
+    
     time_day_label = Label(frame2,text = "Date: ",font = ("bebas neue",13))
     time_day_label2 = Label(frame2,text = time_day,font = ("bebas neue",12,"bold"))
 
@@ -331,10 +381,8 @@ def refresh_info():
     time_day_label2.grid(row=2,column=1,sticky=E)
 
     # Getting Location from the Data
-    try:
-        location = api['resolvedAddress']
-    except KeyError:
-        location = "Error"
+    location = api['resolvedAddress']
+   
     location_label = Label(frame2,text = "Location: ",font = ("bebas neue",13))
     location_label2 = Label(frame2,text = location,font=("bebas neue",12,"bold"))
 
@@ -342,10 +390,8 @@ def refresh_info():
     location_label2.grid(row=4,column=1,sticky=E)
 
     # Air Quality
-    try:
-        wind_speed = api['days'][0]['windspeed']
-    except KeyError:
-        wind_speed = "Error"
+    wind_speed = api['days'][0]['windspeed']
+    
     wind_speed_label1 = Label(frame2,text = "Wind Speed: ",font = ("bebas neue",13))
     wind_speed_label2 = Label(frame2,text = str(wind_speed)+" km/hr",font =("bebas neue",12,"bold"))
 
