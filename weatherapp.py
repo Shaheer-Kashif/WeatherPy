@@ -145,8 +145,8 @@ def display_more():
         # Weather Description
         description = api['days'][0]['description']
         
-        desc_label = Label(desc_frame,text = "Description: ",font = ("bebas neue",15))
-        desc_label2 = Label(desc_frame,text = description,font = ("bebas neue",15,"bold"))
+        desc_label = Label(desc_frame,text = "Description: ",font = ("bebas neue",12))
+        desc_label2 = Label(desc_frame,text = description,font = ("bebas neue",12,"bold"))
         
         desc_label.grid(row=0,column=0,sticky=W)
         desc_label2.grid(row=0,column=1,sticky=E)
@@ -256,10 +256,33 @@ def display_more():
         max_temp_label2.grid(row=3,column=1,sticky=E)
         
         # Creating 3rd Details Frame (5 Days Extended Forecast)
-        frame3_n = LabelFrame(new_window,borderwidth=1)
+        frame3_n = LabelFrame(new_window,borderwidth=0)
         frame3_n.grid(row=2,column=0,columnspan=2)
-    
-    
+        
+        weather_forecast = Label(frame3_n,text = "5 Day Weather Forecast",font = ("bebas neue",14),borderwidth=0)
+        weather_forecast.grid(row=0,column=0)
+        
+        weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        current_date = datetime.datetime.now()
+        curr_day = weekday_names[current_date.weekday()]
+
+
+        for i in range(1,6):
+            locals()["day"+str(i)] = LabelFrame(frame3_n)
+            locals()["day"+str(i)].grid(row=i,column=0)
+            
+            locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)])
+            locals()["labelday"+str(i)].grid(row=0,column=i-1)
+            if i == 1:
+                locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=curr_day[0:3].upper())
+            else:
+                next_date = current_date + datetime.timedelta(days=i-1)
+                locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=weekday_names[next_date.weekday()][0:3].upper())
+            locals()["dayname"+str(i)].grid(row=0,column=0)
+            date = api['days'][i-1]['datetime']
+            locals()["date"+str(i)] = Label(locals()["labelday"+str(i)],text=date[5:])
+            locals()["date"+str(i)].grid(row=1,column=0)         
+            
 def refresh_info():
     global search,first,root,frame2,root,time_label2,time_off,more,search_button,display_pass
     
