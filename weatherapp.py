@@ -31,28 +31,19 @@ root = Tk()
 root.title("WeatherPy")
 root.iconbitmap("icons/weatherimage.ico")
     
-# Defining Weather Icon Images
-sunny = Image.open("icons/sun.png")
-cloudy_day = Image.open("icons/cloudy.png")
-rain_day = Image.open("icons/rain.png")
-night = Image.open("icons/night.png")
-cloudy_night = Image.open("icons/cloudy-night.png")
-rain_night = Image.open("icons/rainy-night.png")
+# Defining Weather Icon Images (Large Size)
+sunny_final = ImageTk.PhotoImage(Image.open("icons/sun.png"))
+cloudy_day_final = ImageTk.PhotoImage(Image.open("icons/cloudy.png"))
+rain_day_final = ImageTk.PhotoImage(Image.open("icons/rain.png"))
+night_final = ImageTk.PhotoImage(Image.open("icons/night.png"))
+cloudy_night_final = ImageTk.PhotoImage(Image.open("icons/cloudy-night.png"))
+rain_night_final = ImageTk.PhotoImage(Image.open("icons/rainy-night.png"))
 
-# Resizing Images to Make it Small
-images = [sunny,cloudy_day,rain_day,night,cloudy_night,rain_night]
-resized_images = list()
-for img in images:
-    new_img = img.resize((100,100))
-    resized_images.append(new_img)
-
-# Defining Resized Images
-sunny_final = ImageTk.PhotoImage(resized_images[0])
-cloudy_day_final = ImageTk.PhotoImage(resized_images[1])
-rain_day_final = ImageTk.PhotoImage(resized_images[2])
-night_final = ImageTk.PhotoImage(resized_images[3])
-cloudy_night_final = ImageTk.PhotoImage(resized_images[4])
-rain_night_final = ImageTk.PhotoImage(resized_images[5])
+# Defining Weather Icon Images (Small Size)
+sunny_small = ImageTk.PhotoImage(Image.open("icons/sun-small.png"))
+cloudy_day_small = ImageTk.PhotoImage(Image.open("icons/cloudy-small.png"))
+rain_day_small = ImageTk.PhotoImage(Image.open("icons/rain-small.png"))
+drop_small = ImageTk.PhotoImage(Image.open("icons/drop.png"))
 
 # Getting the Location based on Entry
 def get_location():
@@ -119,7 +110,7 @@ def search_button_disable():
 # More Details Window Function
 def display_more():
     # Disabling buttons to avoid conflict of windows and location
-    global new_window,display_pass
+    global new_window,display_pass,sunny_small,rain_day_small,cloudy_day_small,drop_small,theme
     
     # Calling Search Button Disable Function
     search_button_disable()
@@ -136,20 +127,23 @@ def display_more():
     else:
         # Creating new window
         new_window = Toplevel()
+        if theme == "day":
+            new_window.configure(bg = "white")
+            new_window.option_add('*background', 'white')
+            new_window.option_add('*foreground', 'black')
+        else:
+            new_window.configure(bg = "#2b2b2b")
+            new_window.option_add('*background', '#2b2b2b')
+            new_window.option_add('*foreground', 'white')
         
         # More Info
         # Create Frame
         desc_frame = LabelFrame(new_window,borderwidth=0)
         desc_frame.grid(row = 0,column=0,columnspan=2)
         
-        # Weather Description
-        description = api['days'][0]['description']
+        desc_label = Label(desc_frame,text = "More Details",font = ("bebas neue",12,"bold"))
         
-        desc_label = Label(desc_frame,text = "Description: ",font = ("bebas neue",12))
-        desc_label2 = Label(desc_frame,text = description,font = ("bebas neue",12,"bold"))
-        
-        desc_label.grid(row=0,column=0,sticky=W)
-        desc_label2.grid(row=0,column=1,sticky=E)
+        desc_label.grid(row=0,column=0,columnspan=2)
         
         # Creating 1st Details Frame
         frame1_n = LabelFrame(new_window,borderwidth=1)
@@ -263,28 +257,74 @@ def display_more():
         weather_forecast.grid(row=0,column=0)
         
         weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        
         current_date = datetime.datetime.now()
         curr_day = weekday_names[current_date.weekday()]
 
 
         for i in range(1,6):
-            locals()["day"+str(i)] = LabelFrame(frame3_n)
+            locals()["day"+str(i)] = LabelFrame(frame3_n,borderwidth=1)
             locals()["day"+str(i)].grid(row=i,column=0)
             
-            locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)])
-            locals()["labelday"+str(i)].grid(row=0,column=i-1)
+            locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0)
+            locals()["labelday"+str(i)].grid(row=0,column=0)
             if i == 1:
-                locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=curr_day[0:3].upper())
+                locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=curr_day[0:3].upper(),font=("helvetica",10,"bold"))
             else:
                 next_date = current_date + datetime.timedelta(days=i-1)
-                locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=weekday_names[next_date.weekday()][0:3].upper())
+                locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=weekday_names[next_date.weekday()][0:3].upper(),font=("helvetica",10,"bold"))
             locals()["dayname"+str(i)].grid(row=0,column=0)
             date = api['days'][i-1]['datetime']
             locals()["date"+str(i)] = Label(locals()["labelday"+str(i)],text=date[5:])
-            locals()["date"+str(i)].grid(row=1,column=0)         
+            locals()["date"+str(i)].grid(row=1,column=0)   
+
+            locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0)
+            locals()["weather"+str(i)].grid(row=0,column = 1)
+            
+            locals()["condition"+str(i)] = api['days'][i-1]['conditions']
+            
+            if 'CLEAR' in locals()["condition"+str(i)].upper():
+                img_label = Label(locals()["weather"+str(i)],image=sunny_small)
+            elif 'RAIN' in locals()["condition"+str(i)].upper():
+                img_label = Label(locals()["weather"+str(i)],image=rain_day_small)
+            elif 'CLOUDY' in locals()["condition"+str(i)].upper():
+                img_label = Label(locals()["weather"+str(i)],image=cloudy_day_small)
+            img_label.grid(row=0,column=0)
+            
+            max_temp = api['days'][i-1]['tempmax']
+            max_temp_cel = round(5/9 *(max_temp-32))
+            
+            min_temp = api['days'][i-1]['tempmin']
+            min_temp_cel = round(5/9 *(min_temp-32))
+            
+            temp1 = Label(locals()["weather"+str(i)],text = str(max_temp_cel)+"°" ,font = ("bebas neue",12,"bold"))
+            temp2 = Label(locals()["weather"+str(i)],text = str(min_temp_cel)+"°" ,font = ("bebas neue",10),fg="gray")
+            
+            temp1.grid(row=0,column=1)
+            temp2.grid(row=0,column=2)
+            
+            # Weather Description
+            description = api['days'][i-1]['description']
+            
+            locals()["desc"+str(i)] = Label(locals()["weather"+str(i)],text = description ,font = ("bebas neue",11))
+            locals()["desc"+str(i)].grid(row=0,column=3)
+            
+            locals()["precip"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0)
+            locals()["precip"+str(i)].grid(row=0,column = 2)
+            
+            day_precip = int(api['days'][i-1]['precipprob'])
+            precip_img_label = Label(locals()["precip"+str(i)],image=drop_small)
+            precip_img_label.grid(row=0,column=0)
+            
+            precip_label1 = Label(locals()["precip"+str(i)],text = str(day_precip)+"%",font = ("bebas neue",11),fg="gray")
+            precip_label1.grid(row=0,column=1)
+            
+            
+            
+            
             
 def refresh_info():
-    global search,first,root,frame2,root,time_label2,time_off,more,search_button,display_pass
+    global search,first,root,frame2,root,time_label2,time_off,more,search_button,display_pass,theme
     
     # Main Tkinter Window, If Program is executed 1st then it reads the images from the outside
     # otherwise from the inside because of a bug
@@ -299,20 +339,22 @@ def refresh_info():
         
         display_pass = True
 
-        sunny_final = ImageTk.PhotoImage(resized_images[0])
-        cloudy_day_final = ImageTk.PhotoImage(resized_images[1])
-        rain_day_final = ImageTk.PhotoImage(resized_images[2])
-        night_final = ImageTk.PhotoImage(resized_images[3])
-        cloudy_night_final = ImageTk.PhotoImage(resized_images[4])
-        rain_night_final = ImageTk.PhotoImage(resized_images[5])
+        sunny_final = ImageTk.PhotoImage(Image.open("icons/sun.png"))
+        cloudy_day_final = ImageTk.PhotoImage(Image.open("icons/cloudy.png"))
+        rain_day_final = ImageTk.PhotoImage(Image.open("icons/rain.png"))
+        night_final = ImageTk.PhotoImage(Image.open("icons/night.png"))
+        cloudy_night_final = ImageTk.PhotoImage(Image.open("icons/cloudy-night.png"))
+        rain_night_final = ImageTk.PhotoImage(Image.open("icons/rainy-night.png"))
             
     # Dark Mode or Light Mode, depending on time.
     time_init = time.time()
     if time_init > api['days'][0]['sunriseEpoch'] and time_init < api['days'][0]['sunsetEpoch']:
+        theme = "day"
         root.configure(bg = "white")
         root.option_add('*background', 'white')
         root.option_add('*foreground', 'black')
     else:
+        theme = "night"
         root.configure(bg = "#2b2b2b")
         root.option_add('*background', '#2b2b2b')
         root.option_add('*foreground', 'white')
@@ -364,12 +406,12 @@ def refresh_info():
     feelslike_temp_c = round(5/9 *(feelslike_temp_f-32),1)
 
     current_temp_label = Label(frame1,text = str(current_temp_c)+"°",font=("bebas neue",67,"bold"))
-    current_temp_label.grid(row=0,column=1)
+    current_temp_label.grid(row=0,column=1,sticky=E)
     degree_sign = Label(frame1,text="C",font=("bebas neue",32,"bold"),fg="gray")
     degree_sign.grid(row=0,column=2,sticky=W)
 
     feelslike_temp_label = Label(frame1,text = "RealFeel: "+str(feelslike_temp_c)+"°C",font=("bebas neue",16))
-    feelslike_temp_label.grid(row=1,column=1,sticky=N)
+    feelslike_temp_label.grid(row=1,column=1,sticky=W)
 
     # Weather Condition
     desc = api['days'][0]['conditions']
