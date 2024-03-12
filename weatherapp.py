@@ -4,7 +4,8 @@ from PIL import ImageTk,Image
 from tkinter import messagebox
 from urllib.request import urlopen
 
-first = 1
+main_first = 1
+secondary_first = 1
 new_window = None
 display_pass = True
 
@@ -19,7 +20,7 @@ try:
     country = current_location['country']
     
 except:
-    messagebox.showerror("Error","Could not Get Location due to No Internet Connection")
+    messagebox.showerror("Error","Could not get current device's location due to no internet connection.")
     quit()
     
 # Accessing the API
@@ -61,9 +62,9 @@ def get_location():
             api = json.loads(api_req.content)
             pass_var = True
         except requests.exceptions.ConnectionError:
-            messagebox.showerror("Error","No Internet Access Found")
+            messagebox.showerror("Error","No Internet Access Found.")
         except:
-            messagebox.showerror("Error","Invalid Input or Place")
+            messagebox.showerror("Error","Invalid Input or Place.")
         if pass_var == True:
             refresh_info()
 
@@ -110,7 +111,15 @@ def search_button_disable():
 # More Details Window Function
 def display_more():
     # Disabling buttons to avoid conflict of windows and location
-    global new_window,display_pass,sunny_small,rain_day_small,cloudy_day_small,drop_small,theme
+    global new_window,display_pass,theme,secondary_first
+    if secondary_first == 1:
+        secondary_first = 0
+        global sunny_small,rain_day_small,cloudy_day_small,drop_small
+    else:
+        sunny_small = ImageTk.PhotoImage(Image.open("icons/sun-small.png"))
+        cloudy_day_small = ImageTk.PhotoImage(Image.open("icons/cloudy-small.png"))
+        rain_day_small = ImageTk.PhotoImage(Image.open("icons/rain-small.png"))
+        drop_small = ImageTk.PhotoImage(Image.open("icons/drop.png"))
     
     # Calling Search Button Disable Function
     search_button_disable()
@@ -137,17 +146,9 @@ def display_more():
             new_window.option_add('*foreground', 'white')
         
         # More Info
-        # Create Frame
-        desc_frame = LabelFrame(new_window,borderwidth=0)
-        desc_frame.grid(row = 0,column=0,columnspan=2)
-        
-        desc_label = Label(desc_frame,text = "More Details",font = ("bebas neue",12,"bold"))
-        
-        desc_label.grid(row=0,column=0,columnspan=2)
-        
         # Creating 1st Details Frame
-        frame1_n = LabelFrame(new_window,borderwidth=1)
-        frame1_n.grid(row=1,column=0)
+        frame1_n = LabelFrame(new_window,borderwidth=1,padx=9)
+        frame1_n.grid(row=0,column=0)
         
         # UV Value
         uv_index = api['days'][0]['uvindex']
@@ -201,15 +202,15 @@ def display_more():
         # Precipitation Probability
         precip = int(api['days'][0]['precipprob'])
         
-        precip_label = Label(frame1_n,text = "Rain/Snow Chances: ",font = ("bebas neue",13))
+        precip_label = Label(frame1_n,text = "Precip Chances: ",font = ("bebas neue",13))
         precip_label2 = Label(frame1_n,text = str(precip)+"%",font = ("bebas neue",12,"bold"))
         
         precip_label.grid(row=3,column=0,sticky=W)
         precip_label2.grid(row=3,column=1,sticky=E)
         
         # Creating 2nd Details Frame
-        frame2_n = LabelFrame(new_window,borderwidth=1)
-        frame2_n.grid(row=1,column=1)
+        frame2_n = LabelFrame(new_window,borderwidth=1,padx=9)
+        frame2_n.grid(row=0,column=1)
         
         # Sunrise Value
         sunrise = api['days'][0]['sunrise']
@@ -250,11 +251,11 @@ def display_more():
         max_temp_label2.grid(row=3,column=1,sticky=E)
         
         # Creating 3rd Details Frame (5 Days Extended Forecast)
-        frame3_n = LabelFrame(new_window,borderwidth=0)
-        frame3_n.grid(row=2,column=0,columnspan=2)
+        frame3_n = LabelFrame(new_window,borderwidth=2,bg="#0086D3",fg="white")
+        frame3_n.grid(row=1,column=0,columnspan=2)
         
-        weather_forecast = Label(frame3_n,text = "5 Day Weather Forecast",font = ("bebas neue",14),borderwidth=0)
-        weather_forecast.grid(row=0,column=0)
+        weather_forecast = Label(frame3_n,text = "5-Day Weather Forecast:-",font = ("bebas neue",14,"bold"),borderwidth=0,bg="#0086D3",fg="white",padx=10,pady=5)
+        weather_forecast.grid(row=0,column=0,sticky=W)
         
         weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         
@@ -264,9 +265,9 @@ def display_more():
 
         for i in range(1,6):
             locals()["day"+str(i)] = LabelFrame(frame3_n,borderwidth=1)
-            locals()["day"+str(i)].grid(row=i,column=0)
+            locals()["day"+str(i)].grid(row=i,column=0,columnspan=2)
             
-            locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0)
+            locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=5)
             locals()["labelday"+str(i)].grid(row=0,column=0)
             if i == 1:
                 locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=curr_day[0:3].upper(),font=("helvetica",10,"bold"))
@@ -278,7 +279,7 @@ def display_more():
             locals()["date"+str(i)] = Label(locals()["labelday"+str(i)],text=date[5:])
             locals()["date"+str(i)].grid(row=1,column=0)   
 
-            locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0)
+            locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=10)
             locals()["weather"+str(i)].grid(row=0,column = 1)
             
             locals()["condition"+str(i)] = api['days'][i-1]['conditions']
@@ -305,11 +306,19 @@ def display_more():
             
             # Weather Description
             description = api['days'][i-1]['description']
+            char_limit = 30
+            for i in range(100):
+                if len(description) > char_limit:
+                    if description[char_limit] == " ":
+                        description = description[0:char_limit] +"\n" + description[char_limit:]
+                        break
+                    else:
+                        char_limit += 1
             
-            locals()["desc"+str(i)] = Label(locals()["weather"+str(i)],text = description ,font = ("bebas neue",11))
-            locals()["desc"+str(i)].grid(row=0,column=3)
+            locals()["desc"+str(i)] = Label(locals()["weather"+str(i)],text = description ,font = ("bebas neue",11),padx=16)
+            locals()["desc"+str(i)].grid(row=0,column=3,sticky=W)
             
-            locals()["precip"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0)
+            locals()["precip"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=5)
             locals()["precip"+str(i)].grid(row=0,column = 2)
             
             day_precip = int(api['days'][i-1]['precipprob'])
@@ -320,16 +329,13 @@ def display_more():
             precip_label1.grid(row=0,column=1)
             
             
-            
-            
-            
 def refresh_info():
-    global search,first,root,frame2,root,time_label2,time_off,more,search_button,display_pass,theme
+    global search,main_first,root,frame2,root,time_label2,time_off,more,search_button,display_pass,theme
     
     # Main Tkinter Window, If Program is executed 1st then it reads the images from the outside
     # otherwise from the inside because of a bug
-    if first == 1:
-        first = 0
+    if main_first == 1:
+        main_first = 0
         global sunny_final,cloudy_day_final,rain_day_final,night_final,cloudy_night_final,rain_night_final
     else:
         root.destroy()
