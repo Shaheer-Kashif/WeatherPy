@@ -5,7 +5,6 @@ from tkinter import messagebox
 from urllib.request import urlopen
 
 main_first = 1
-secondary_first = 1
 new_window = None
 display_pass = True
 
@@ -31,20 +30,6 @@ api = json.loads(api_req.content)
 root = Tk()
 root.title("WeatherPy")
 root.iconbitmap("icons/weatherimage.ico")
-    
-# Defining Weather Icon Images (Large Size)
-sunny_final = ImageTk.PhotoImage(Image.open("icons/sun.png"))
-cloudy_day_final = ImageTk.PhotoImage(Image.open("icons/cloudy.png"))
-rain_day_final = ImageTk.PhotoImage(Image.open("icons/rain.png"))
-night_final = ImageTk.PhotoImage(Image.open("icons/night.png"))
-cloudy_night_final = ImageTk.PhotoImage(Image.open("icons/cloudy-night.png"))
-rain_night_final = ImageTk.PhotoImage(Image.open("icons/rainy-night.png"))
-
-# Defining Weather Icon Images (Small Size)
-sunny_small = ImageTk.PhotoImage(Image.open("icons/sun-small.png"))
-cloudy_day_small = ImageTk.PhotoImage(Image.open("icons/cloudy-small.png"))
-rain_day_small = ImageTk.PhotoImage(Image.open("icons/rain-small.png"))
-drop_small = ImageTk.PhotoImage(Image.open("icons/drop.png"))
 
 # Getting the Location based on Entry
 def get_location():
@@ -111,15 +96,15 @@ def search_button_disable():
 # More Details Window Function
 def display_more():
     # Disabling buttons to avoid conflict of windows and location
-    global new_window,display_pass,theme,secondary_first
-    if secondary_first == 1:
-        secondary_first = 0
-        global sunny_small,rain_day_small,cloudy_day_small,drop_small
-    else:
-        sunny_small = ImageTk.PhotoImage(Image.open("icons/sun-small.png"))
-        cloudy_day_small = ImageTk.PhotoImage(Image.open("icons/cloudy-small.png"))
-        rain_day_small = ImageTk.PhotoImage(Image.open("icons/rain-small.png"))
-        drop_small = ImageTk.PhotoImage(Image.open("icons/drop.png"))
+    global new_window,display_pass,theme
+    
+    # Defining Weather Icon Images (Small Size)
+    global sunny_small,cloudy_day_small,rain_day_small,drop_small
+    
+    sunny_small = ImageTk.PhotoImage(Image.open("icons/sun-small.png"))
+    cloudy_day_small = ImageTk.PhotoImage(Image.open("icons/cloudy-small.png"))
+    rain_day_small = ImageTk.PhotoImage(Image.open("icons/rain-small.png"))
+    drop_small = ImageTk.PhotoImage(Image.open("icons/drop.png"))
     
     # Calling Search Button Disable Function
     search_button_disable()
@@ -147,7 +132,7 @@ def display_more():
         
         # More Info
         # Creating 1st Details Frame
-        frame1_n = LabelFrame(new_window,borderwidth=1,padx=9)
+        frame1_n = LabelFrame(new_window,borderwidth=1)
         frame1_n.grid(row=0,column=0)
         
         # UV Value
@@ -209,7 +194,7 @@ def display_more():
         precip_label2.grid(row=3,column=1,sticky=E)
         
         # Creating 2nd Details Frame
-        frame2_n = LabelFrame(new_window,borderwidth=1,padx=9)
+        frame2_n = LabelFrame(new_window,borderwidth=1)
         frame2_n.grid(row=0,column=1)
         
         # Sunrise Value
@@ -232,20 +217,26 @@ def display_more():
         
         # Minimum Temperature Value
         min_temp_f = api['days'][0]['tempmin']
-        min_temp_c = round(5/9 *(min_temp_f-32))
+        min_temp_c = str(round(5/9 *(min_temp_f-32)))
+        
+        if len(min_temp_c) == 1:
+                min_temp_c = " " + min_temp_c
         
         min_temp_label = Label(frame2_n,text = "Min Temperature: ",font = ("bebas neue",13))
-        min_temp_label2 = Label(frame2_n,text = str(min_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
+        min_temp_label2 = Label(frame2_n,text = min_temp_c+"°C" ,font = ("bebas neue",12,"bold"))
         
         min_temp_label.grid(row=2,column=0,sticky=W)
         min_temp_label2.grid(row=2,column=1,sticky=E)
         
         # Maximum Temperature Value
         max_temp_f = api['days'][0]['tempmax']
-        max_temp_c = round(5/9 *(max_temp_f-32))
+        max_temp_c = str(round(5/9 *(max_temp_f-32)))
+        
+        if len(max_temp_c) == 1:
+                max_temp_c = " " + max_temp_c
         
         max_temp_label = Label(frame2_n,text = "Max Temperature: ",font = ("bebas neue",13))
-        max_temp_label2 = Label(frame2_n,text = str(max_temp_c)+"°C" ,font = ("bebas neue",12,"bold"))
+        max_temp_label2 = Label(frame2_n,text = max_temp_c+"°C" ,font = ("bebas neue",12,"bold"))
         
         max_temp_label.grid(row=3,column=0,sticky=W)
         max_temp_label2.grid(row=3,column=1,sticky=E)
@@ -267,67 +258,76 @@ def display_more():
             locals()["day"+str(i)] = LabelFrame(frame3_n,borderwidth=1)
             locals()["day"+str(i)].grid(row=i,column=0,columnspan=2)
             
-            locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=5)
-            locals()["labelday"+str(i)].grid(row=0,column=0)
+            locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=5,width=60,height=40)
+            locals()["labelday"+str(i)].pack(side=LEFT)
+            locals()["labelday"+str(i)].pack_propagate(False)
+            
             if i == 1:
                 locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=curr_day[0:3].upper(),font=("helvetica",10,"bold"))
             else:
                 next_date = current_date + datetime.timedelta(days=i-1)
                 locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=weekday_names[next_date.weekday()][0:3].upper(),font=("helvetica",10,"bold"))
-            locals()["dayname"+str(i)].grid(row=0,column=0)
+            locals()["dayname"+str(i)].pack(side=TOP)
             date = api['days'][i-1]['datetime']
             locals()["date"+str(i)] = Label(locals()["labelday"+str(i)],text=date[5:])
-            locals()["date"+str(i)].grid(row=1,column=0)   
+            locals()["date"+str(i)].pack(side=BOTTOM)   
 
-            locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=10)
-            locals()["weather"+str(i)].grid(row=0,column = 1)
+            locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=10,width=80,height=40)
+            locals()["weather"+str(i)].pack(side=LEFT)
             
-            locals()["condition"+str(i)] = api['days'][i-1]['conditions']
+            condition_desc = api['days'][i-1]['conditions']
             
-            if 'CLEAR' in locals()["condition"+str(i)].upper():
+            if 'CLEAR' in condition_desc.upper():
                 img_label = Label(locals()["weather"+str(i)],image=sunny_small)
-            elif 'RAIN' in locals()["condition"+str(i)].upper():
+            elif 'RAIN' in condition_desc.upper():
                 img_label = Label(locals()["weather"+str(i)],image=rain_day_small)
-            elif 'CLOUDY' in locals()["condition"+str(i)].upper():
+            elif 'CLOUDY' in condition_desc.upper():
                 img_label = Label(locals()["weather"+str(i)],image=cloudy_day_small)
-            img_label.grid(row=0,column=0)
+            img_label.pack(side=LEFT)
             
             max_temp = api['days'][i-1]['tempmax']
-            max_temp_cel = round(5/9 *(max_temp-32))
+            max_temp_cel = str(round(5/9 *(max_temp-32)))
             
             min_temp = api['days'][i-1]['tempmin']
-            min_temp_cel = round(5/9 *(min_temp-32))
+            min_temp_cel = str(round(5/9 *(min_temp-32)))
             
-            temp1 = Label(locals()["weather"+str(i)],text = str(max_temp_cel)+"°" ,font = ("bebas neue",12,"bold"))
-            temp2 = Label(locals()["weather"+str(i)],text = str(min_temp_cel)+"°" ,font = ("bebas neue",10),fg="gray")
+            temp1 = Label(locals()["weather"+str(i)],text = max_temp_cel+"°" ,font = ("bebas neue",12,"bold"))
+            temp2 = Label(locals()["weather"+str(i)],text = min_temp_cel+"°" ,font = ("bebas neue",10),fg="gray")
             
-            temp1.grid(row=0,column=1)
-            temp2.grid(row=0,column=2)
+            temp1.pack(side=LEFT)
+            temp2.pack(side=LEFT)
             
             # Weather Description
+            locals()["desc_weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=10,width=250,height=40)
+            locals()["desc_weather"+str(i)].pack(side=LEFT)
+            locals()["desc_weather"+str(i)].pack_propagate(False)
+            
             description = api['days'][i-1]['description']
             char_limit = 30
-            for i in range(100):
+            for j in range(15):
                 if len(description) > char_limit:
                     if description[char_limit] == " ":
                         description = description[0:char_limit] +"\n" + description[char_limit:]
                         break
                     else:
                         char_limit += 1
+                else:
+                    break
             
-            locals()["desc"+str(i)] = Label(locals()["weather"+str(i)],text = description ,font = ("bebas neue",11),padx=16)
-            locals()["desc"+str(i)].grid(row=0,column=3,sticky=W)
+            locals()["desc"+str(i)] = Label(locals()["desc_weather"+str(i)],text = description ,font = ("bebas neue",11),padx=16)
+            locals()["desc"+str(i)].pack()
             
-            locals()["precip"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=5)
-            locals()["precip"+str(i)].grid(row=0,column = 2)
+            locals()["precip"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=5,width=70,height=40)
+            locals()["precip"+str(i)].pack(side=LEFT)
+            locals()["precip"+str(i)].pack_propagate(False)
             
-            day_precip = int(api['days'][i-1]['precipprob'])
+            day_precip = str(int(api['days'][i-1]['precipprob']))
+            
             precip_img_label = Label(locals()["precip"+str(i)],image=drop_small)
-            precip_img_label.grid(row=0,column=0)
+            precip_img_label.pack(side=LEFT)
             
-            precip_label1 = Label(locals()["precip"+str(i)],text = str(day_precip)+"%",font = ("bebas neue",11),fg="gray")
-            precip_label1.grid(row=0,column=1)
-            
+            precip_label1 = Label(locals()["precip"+str(i)],text = day_precip+"%",font = ("bebas neue",11),fg="gray")
+            precip_label1.pack(side=LEFT)
             
 def refresh_info():
     global search,main_first,root,frame2,root,time_label2,time_off,more,search_button,display_pass,theme
@@ -336,21 +336,22 @@ def refresh_info():
     # otherwise from the inside because of a bug
     if main_first == 1:
         main_first = 0
-        global sunny_final,cloudy_day_final,rain_day_final,night_final,cloudy_night_final,rain_night_final
     else:
         root.destroy()
         root = Tk()
         root.title("WeatherPy")
         root.iconbitmap("icons/weatherimage.ico")
-        
         display_pass = True
 
-        sunny_final = ImageTk.PhotoImage(Image.open("icons/sun.png"))
-        cloudy_day_final = ImageTk.PhotoImage(Image.open("icons/cloudy.png"))
-        rain_day_final = ImageTk.PhotoImage(Image.open("icons/rain.png"))
-        night_final = ImageTk.PhotoImage(Image.open("icons/night.png"))
-        cloudy_night_final = ImageTk.PhotoImage(Image.open("icons/cloudy-night.png"))
-        rain_night_final = ImageTk.PhotoImage(Image.open("icons/rainy-night.png"))
+    # Defining Weather Icon Images (Large Size)
+    global sunny_final,cloudy_day_final,rain_day_final,night_final,cloudy_night_final,rain_night_final
+    
+    sunny_final = ImageTk.PhotoImage(Image.open("icons/sun.png"))
+    cloudy_day_final = ImageTk.PhotoImage(Image.open("icons/cloudy.png"))
+    rain_day_final = ImageTk.PhotoImage(Image.open("icons/rain.png"))
+    night_final = ImageTk.PhotoImage(Image.open("icons/night.png"))
+    cloudy_night_final = ImageTk.PhotoImage(Image.open("icons/cloudy-night.png"))
+    rain_night_final = ImageTk.PhotoImage(Image.open("icons/rainy-night.png"))
             
     # Dark Mode or Light Mode, depending on time.
     time_init = time.time()
