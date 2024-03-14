@@ -83,20 +83,17 @@ def time_update():
 
 # Search Button Disable based on New Window
 def search_button_disable():
-    global search_button,new_window
-    try:
-        if new_window.winfo_exists():
-            search_button.config(state=DISABLED)
-        else:
-            search_button.config(state=ACTIVE)
-    except:
-        pass
-    search_button.after(500,search_button_disable)
+    global search_button,new_window,root,entry_frame
+    if new_window.winfo_exists():
+        search_button.config(state=DISABLED)
+    else:
+        search_button.config(state=NORMAL)
+    search_button.after(200,search_button_disable)
     
 # More Details Window Function
 def display_more():
     # Disabling buttons to avoid conflict of windows and location
-    global new_window,display_pass,theme
+    global new_window,display_pass,theme, search_button,root
     
     # Defining Weather Icon Images (Small Size)
     global sunny_small,cloudy_day_small,rain_day_small,drop_small
@@ -107,13 +104,13 @@ def display_more():
     drop_small = ImageTk.PhotoImage(Image.open("icons/drop.png"))
     
     # Calling Search Button Disable Function
-    search_button_disable()
     
     # First Time Creating and Destroying a Window so the window property is associated with the variable
     if display_pass == True:
         new_window = Toplevel()
         display_pass = False
         new_window.destroy()
+        search_button_disable()
        
     # Chcking if the window exists
     if new_window.winfo_exists():
@@ -131,10 +128,15 @@ def display_more():
             new_window.option_add('*foreground', 'white')
         
         # More Info
-        # Creating 1st Details Frame
-        frame1_n = LabelFrame(new_window,borderwidth=1)
-        frame1_n.grid(row=0,column=0)
+        topframe = LabelFrame(new_window,borderwidth=0,width=600,height=100)
+        topframe.pack(side=TOP)
         
+        # Creating 1st Details Frame
+        frame1_n = LabelFrame(topframe,borderwidth=0)
+        frame1_n.pack(side=LEFT,padx=(0,10))
+        
+        border_frame = Frame(topframe, height=100, width=2, bg="#0086D3")
+        border_frame.pack(side=LEFT, fill=Y)
         # UV Value
         uv_index = api['days'][0]['uvindex']
         str_uv = str(int(uv_index))
@@ -194,8 +196,8 @@ def display_more():
         precip_label2.grid(row=3,column=1,sticky=E)
         
         # Creating 2nd Details Frame
-        frame2_n = LabelFrame(new_window,borderwidth=1)
-        frame2_n.grid(row=0,column=1)
+        frame2_n = LabelFrame(topframe,borderwidth=0)
+        frame2_n.pack(side=LEFT,padx=(10,0))
         
         # Sunrise Value
         sunrise = api['days'][0]['sunrise']
@@ -243,7 +245,8 @@ def display_more():
         
         # Creating 3rd Details Frame (5 Days Extended Forecast)
         frame3_n = LabelFrame(new_window,borderwidth=2,bg="#0086D3",fg="white")
-        frame3_n.grid(row=1,column=0,columnspan=2)
+        frame3_n.pack(side=BOTTOM)
+        frame3_n.pack_propagate(False)
         
         weather_forecast = Label(frame3_n,text = "5-Day Weather Forecast:-",font = ("bebas neue",14,"bold"),borderwidth=0,bg="#0086D3",fg="white",padx=10,pady=5)
         weather_forecast.grid(row=0,column=0,sticky=W)
@@ -252,7 +255,6 @@ def display_more():
         
         current_date = datetime.datetime.now()
         curr_day = weekday_names[current_date.weekday()]
-
 
         for i in range(1,6):
             locals()["day"+str(i)] = LabelFrame(frame3_n,borderwidth=1)
@@ -272,7 +274,7 @@ def display_more():
             locals()["date"+str(i)] = Label(locals()["labelday"+str(i)],text=date[5:])
             locals()["date"+str(i)].pack(side=BOTTOM)   
 
-            locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=10,width=80,height=40)
+            locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=10,width=100,height=40)
             locals()["weather"+str(i)].pack(side=LEFT)
             
             condition_desc = api['days'][i-1]['conditions']
@@ -288,8 +290,14 @@ def display_more():
             max_temp = api['days'][i-1]['tempmax']
             max_temp_cel = str(round(5/9 *(max_temp-32)))
             
+            if len(max_temp_cel) == 1:
+                max_temp_cel = "  " + max_temp_cel
+            
             min_temp = api['days'][i-1]['tempmin']
             min_temp_cel = str(round(5/9 *(min_temp-32)))
+            
+            if len(min_temp_cel) == 1:
+                min_temp_cel = "  " + min_temp_cel
             
             temp1 = Label(locals()["weather"+str(i)],text = max_temp_cel+"°" ,font = ("bebas neue",12,"bold"))
             temp2 = Label(locals()["weather"+str(i)],text = min_temp_cel+"°" ,font = ("bebas neue",10),fg="gray")
@@ -330,7 +338,7 @@ def display_more():
             precip_label1.pack(side=LEFT)
             
 def refresh_info():
-    global search,main_first,root,frame2,root,time_label2,time_off,more,search_button,display_pass,theme
+    global search,main_first,root,frame2,root,time_label2,time_off,more,search_button,display_pass,theme,entry_frame
     
     # Main Tkinter Window, If Program is executed 1st then it reads the images from the outside
     # otherwise from the inside because of a bug
