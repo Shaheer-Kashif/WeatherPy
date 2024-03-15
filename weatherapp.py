@@ -3,6 +3,7 @@ from tkinter import *
 from PIL import ImageTk,Image
 from tkinter import messagebox
 from urllib.request import urlopen
+from os import system
 
 main_first = 1
 new_window = None
@@ -52,7 +53,7 @@ def get_location():
             messagebox.showerror("Error","Invalid Input or Place.")
         if pass_var == True:
             refresh_info()
-
+    
 # Time Update Function after Every Second
 def time_update():
     global frame2,root,time_label2,time_off
@@ -79,7 +80,8 @@ def time_update():
     time_label2.config(text = str(new_time))
 
     # 1 second delay to update time again
-    time_label2.after(1000, time_update)
+    time_label2.after(200, time_update)
+    system("cls")
 
 # Search Button Disable based on New Window
 def search_button_disable():
@@ -279,12 +281,13 @@ def display_more():
             
             condition_desc = api['days'][i-1]['conditions']
             
-            if 'CLEAR' in condition_desc.upper():
-                img_label = Label(locals()["weather"+str(i)],image=sunny_small)
-            elif 'RAIN' in condition_desc.upper():
+            if 'RAIN' in condition_desc.upper():
                 img_label = Label(locals()["weather"+str(i)],image=rain_day_small)
             elif 'CLOUDY' in condition_desc.upper():
                 img_label = Label(locals()["weather"+str(i)],image=cloudy_day_small)
+            else:
+                img_label = Label(locals()["weather"+str(i)],image=sunny_small)
+                
             img_label.pack(side=LEFT)
             
             max_temp = api['days'][i-1]['tempmax']
