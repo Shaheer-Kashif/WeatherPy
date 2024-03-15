@@ -250,46 +250,56 @@ def display_more():
         frame3_n.pack(side=BOTTOM)
         frame3_n.pack_propagate(False)
         
+        # Main Heading
         weather_forecast = Label(frame3_n,text = "5-Day Weather Forecast:-",font = ("bebas neue",14,"bold"),borderwidth=0,bg="#0086D3",fg="white",padx=10,pady=5)
         weather_forecast.grid(row=0,column=0,sticky=W)
         
+        # Weekday Names, for Iteration
         weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         
         current_date = datetime.datetime.now()
         curr_day = weekday_names[current_date.weekday()]
 
+        # Loop Goes from 1-5
         for i in range(1,6):
+            
+            # Creating Main Day Label
             locals()["day"+str(i)] = LabelFrame(frame3_n,borderwidth=1)
             locals()["day"+str(i)].grid(row=i,column=0,columnspan=2)
             
+            # Date and Time Holder
             locals()["labelday"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=5,width=60,height=40)
             locals()["labelday"+str(i)].pack(side=LEFT)
             locals()["labelday"+str(i)].pack_propagate(False)
             
+            # Defining Day
             if i == 1:
                 locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=curr_day[0:3].upper(),font=("helvetica",10,"bold"))
             else:
                 next_date = current_date + datetime.timedelta(days=i-1)
                 locals()["dayname"+str(i)] = Label(locals()["labelday"+str(i)],text=weekday_names[next_date.weekday()][0:3].upper(),font=("helvetica",10,"bold"))
             locals()["dayname"+str(i)].pack(side=TOP)
+            
+            # Gets Day Date
             date = api['days'][i-1]['datetime']
             locals()["date"+str(i)] = Label(locals()["labelday"+str(i)],text=date[5:])
             locals()["date"+str(i)].pack(side=BOTTOM)   
 
+            # Weather and Temp Holder
             locals()["weather"+str(i)] = LabelFrame(locals()["day"+str(i)],borderwidth=0,padx=10,width=100,height=40)
             locals()["weather"+str(i)].pack(side=LEFT)
             
+            # Checks which Icon to Place based on Weather Conditions
             condition_desc = api['days'][i-1]['conditions']
-            
             if 'RAIN' in condition_desc.upper():
                 img_label = Label(locals()["weather"+str(i)],image=rain_day_small)
             elif 'CLOUDY' in condition_desc.upper():
                 img_label = Label(locals()["weather"+str(i)],image=cloudy_day_small)
             else:
                 img_label = Label(locals()["weather"+str(i)],image=sunny_small)
-                
             img_label.pack(side=LEFT)
             
+            # Temperature Min/Max
             max_temp = api['days'][i-1]['tempmax']
             max_temp_cel = str(round(5/9 *(max_temp-32)))
             
@@ -313,6 +323,7 @@ def display_more():
             locals()["desc_weather"+str(i)].pack(side=LEFT)
             locals()["desc_weather"+str(i)].pack_propagate(False)
             
+            # Logic to Breakdown Long Weather Descriptions
             description = api['days'][i-1]['description']
             char_limit = 30
             for j in range(15):
@@ -332,6 +343,7 @@ def display_more():
             locals()["precip"+str(i)].pack(side=LEFT)
             locals()["precip"+str(i)].pack_propagate(False)
             
+            # Precip Label
             day_precip = str(int(api['days'][i-1]['precipprob']))
             
             precip_img_label = Label(locals()["precip"+str(i)],image=drop_small)
