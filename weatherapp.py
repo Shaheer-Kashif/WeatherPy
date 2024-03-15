@@ -128,7 +128,9 @@ def display_more():
             new_window.configure(bg = "#2b2b2b")
             new_window.option_add('*background', '#2b2b2b')
             new_window.option_add('*foreground', 'white')
-        
+            
+        new_window.title("More Details")
+        new_window.iconbitmap("icons/weatherimage.ico")
         # More Info
         topframe = LabelFrame(new_window,borderwidth=0,width=600,height=100)
         topframe.pack(side=TOP)
@@ -366,6 +368,9 @@ def refresh_info():
         root.iconbitmap("icons/weatherimage.ico")
         display_pass = True
 
+    # Lock Window Resizing
+    root.resizable(False, False)
+    
     # Defining Weather Icon Images (Large Size)
     global sunny_final,cloudy_day_final,rain_day_final,night_final,cloudy_night_final,rain_night_final
     
